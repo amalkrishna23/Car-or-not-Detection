@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>TFJS Model Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.13.0"></script>
+</head>
+<body>
+  <h2>Check console (F12) for model loading log</h2>
+
+  <script>
+    async function loadModel() {
+      const model = await tf.loadGraphModel('https://raw.githubusercontent.com/amalkrishna23/TFJS-MODEL/main/model.json');
+      console.log("model...!!", model);
+
+      // Optional: run a dummy prediction to test
+      const input = tf.randomNormal([1, 2]); // use [1, 224, 224, 3] for MobileNetV2
+      const output = model.predict(input);
+      output.print();
+    }
+    loadModel();
+  </script>
+</body>
+</html>
