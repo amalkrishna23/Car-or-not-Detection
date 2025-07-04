@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Car vs Non-Car Classifier</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+      background: #f6f8fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: #fff;
+      padding: 30px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      text-align: center;
+      position: relative;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    input[type="file"] {
+      margin: 20px 0;
+    }
+
+    .image-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .spinner {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.2rem;
+      color: #444;
+      display: none;
+    }
+
+    .spinner::after {
+      content: '';
+      display: inline-block;
+      margin-left: 10px;
+      width: 16px;
+      height: 16px;
+      border: 3px solid #ccc;
+      border-top-color: #333;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #444;
+    }
+
+    .bar-container {
+      height: 12px;
+      background: #eee;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4caf50, #81c784);
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    #predictBtn {
+      display: none;
+      margin-top: 16px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #predictBtn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Car vs Non-Car Classifier</h1>
+    <input type="file" id="fileInput" accept="image/*" />
+
+    <div class="image-wrapper">
+      <img id="preview" alt="Image Preview" />
+      <div id="spinner" class="spinner">Processing</div>
+    </div>
+
+    <button id="predictBtn"> Predict</button>
+
+    <div class="result" id="prediction">Loading model...</div>
+    <div class="bar-container" id="barContainer">
+      <div class="bar" id="confidenceBar"></div>
+    </div>
+  </div>
+
+  <script>
+    let model, inputKey, currentImage = null;
+
+    async function loadModel() {
+      try {
+        model = await tf.loadGraphModel('https://raw.githubusercontent.com/amalkrishna23/TFJS-MODEL/main/model.json');
+        inputKey = model.executor.graph.inputs[0].name;
+        document.getElementById("prediction").innerText = "   Model loaded. Upload an image.";
+      } catch (err) {
+        console.error("Error loading model:", err);
+        document.getElementById("prediction").innerText = " Error loading model.";
+      }
+    }
+
+    async function predictImage(imgElement) {
+      const predDiv = document.getElementById("prediction");
+      const barContainer = document.getElementById("barContainer");
+      const spinner = document.getElementById("spinner");
+
+      spinner.style.display = "block";
+      predDiv.innerText = " Predicting...";
+      barContainer.style.display = "none";
+
+      await tf.nextFrame();
+
+      const tensor = tf.tidy(() => {
+        return tf.browser.fromPixels(imgElement)
+          .resizeBilinear([224, 224])
+          .toFloat()
+          .div(255)
+          .reshape([1, 224, 224, 3]);
+      });
+
+      try {
+        const prediction = await model.executeAsync({ [inputKey]: tensor });
+        const score = prediction.dataSync()[0];
+
+        const label = score > 0.5 ? ` It's a Car!` : ` Not a Car.`;
+        const confidence = (score > 0.5 ? score : 1 - score) * 100;
+
+        predDiv.innerText = `${label} (Confidence: ${confidence.toFixed(1)}%)`;
+        document.getElementById("confidenceBar").style.width = `${confidence.toFixed(1)}%`;
+        barContainer.style.display = "block";
+
+        tf.dispose(prediction);
+      } catch (err) {
+        console.error("Prediction error:", err);
+        predDiv.innerText = " Prediction failed.";
+      }
+
+      spinner.style.display = "none";
+      tf.dispose(tensor);
+    }
+
+    document.getElementById("fileInput").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById("preview");
+        const predictBtn = document.getElementById("predictBtn");
+        const predDiv = document.getElementById("prediction");
+        const barContainer = document.getElementById("barContainer");
+        const confidenceBar = document.getElementById("confidenceBar");
+
+        // Reset UI
+        predDiv.innerText = ""; // ✅ clear previous result
+        barContainer.style.display = "none";
+        confidenceBar.style.width = "0%";
+        predictBtn.style.display = "none";
+
+        img.style.display = "block";
+        img.src = e.target.result;
+
+        img.onload = () => {
+          currentImage = img;
+          predictBtn.style.display = "inline-block";
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById("predictBtn").addEventListener("click", () => {
+      if (currentImage) {
+        predictImage(currentImage);
+      }
+    });
+
+    loadModel();
+  </script>
+
+</body>
+</html>
