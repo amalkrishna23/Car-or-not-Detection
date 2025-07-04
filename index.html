@@ -174,7 +174,7 @@
         const prediction = await model.executeAsync({ [inputKey]: tensor });
         const score = prediction.dataSync()[0];
 
-        const label = score > 0.5 ? ` It's a Car!` : ` Not a Car`;
+        const label = score > 0.5 ? ` It's a Car` : ` Not a Car`;
         const confidence = (score > 0.5 ? score : 1 - score) * 100;
 
         predDiv.innerText = `${label} (Confidence: ${confidence.toFixed(1)}%)`;
