@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Car vs Non-Car Classifier</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; }
+    img { max-width: 100%; height: auto; margin-top: 20px; border: 1px solid #ccc; }
+    #prediction { font-size: 1.3em; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <h2> Car vs Non-Car Classifier</h2>
+
+  <input type="file" id="fileInput" accept="image/*" />
+  <br />
+  <img id="preview" alt="Image Preview"/>
+  <div id="prediction">Loading model...</div>
+
+  <script>
+    let model, inputKey;
+
+    async function loadModel() {
+      try {
+        model = await tf.loadGraphModel('https://raw.githubusercontent.com/amalkrishna23/TFJS-MODEL/main/model.json');
+        inputKey = model.executor.graph.inputs[0].name;
+        document.getElementById("prediction").innerText = " Model loaded. Upload an image.";
+      } catch (err) {
+        console.error(" Error loading model:", err);
+        document.getElementById("prediction").innerText = " Error loading model.";
+      }
+    }
+
+    async function predictImage(imgElement) {
+      const tensor = tf.tidy(() => {
+        return tf.browser.fromPixels(imgElement)
+          .resizeBilinear([224, 224])
+          .toFloat()
+          .div(255)
+          .reshape([1, 224, 224, 3]);
+      });
+
+      try {
+        const prediction = await model.executeAsync({ [inputKey]: tensor });
+        const score = prediction.dataSync()[0];
+        document.getElementById("prediction").innerText =
+          score > 0.5
+            ? ` Car (Confidence: ${(score * 100).toFixed(1)}%)`
+            : ` Not a Car (Confidence: ${((1 - score) * 100).toFixed(1)}%)`;
+
+        tf.dispose(prediction);
+      } catch (err) {
+        console.error("Prediction error:", err);
+        document.getElementById("prediction").innerText = "Prediction failed.";
+      }
+
+      tf.dispose(tensor);
+    }
+
+    document.getElementById("fileInput").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById("preview");
+        img.src = e.target.result;
+        img.onload = () => predictImage(img);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    loadModel();
+  </script>
+
+</body>
+</html>
