@@ -1,6 +1,6 @@
-🚗 Car vs Non-Car Classifier
+# 🚗 Car vs Non-Car Classifier
 
-A TensorFlow.js web-based deep learning model that classifies images as **Car** or **Not a Car**. Built for fast and efficient inference directly in the browser using a pre-trained model.
+A TensorFlow.js web-based deep learning model that classifies images as **Car** or **Not a Car**. Built using **MobileNetV2** as the base model for fast and efficient inference directly in the browser.
 
 ## 🧠 Overview
 
@@ -8,9 +8,9 @@ This project allows users to upload an image and instantly determine whether it 
 
 **Model Architecture:**
 
-* **Base Model:** Custom CNN (or MobileNet-based if applicable)
+* **Base Model:** MobileNetV2
 * **Framework:** TensorFlow.js
-* **Output Classes:** Car, Not a Car
+* **Output Classes:** Not a Car, Car
 
 ## ⚙️ How It Works
 
@@ -18,13 +18,13 @@ This project allows users to upload an image and instantly determine whether it 
    The `model.json` and associated `.bin` weight files are loaded using TensorFlow.js.
 
 2. **Preprocess the Image:**
-   The uploaded image is resized to 224x224 pixels and normalized for the model.
+   The uploaded image is resized to 224x224 pixels and normalized for MobileNetV2 compatibility.
 
 3. **Predict the Class:**
-   The model outputs a probability for the image being a "Car."
+   The model outputs a probability distribution for the two classes: "Car" and "Not a Car."
 
 4. **Display the Result:**
-   The predicted class along with confidence is shown in the browser, along with a visual confidence bar.
+   The predicted class with the highest confidence is displayed to the user, along with a confidence bar.
 
 ## 🚀 Getting Started
 
@@ -41,23 +41,3 @@ cd Car-vs-Non-Car-Classifier
 * Ensure all model files (`model.json` and `.bin` files) are in the `model/` folder.
 * Upload an image and click **Predict** to see the result.
 
-## 🖼️ Screenshot
-
-*(Optional: Add a screenshot of the app here)*
-
-## 💻 Requirements
-
-* Modern web browser (Chrome, Firefox, Edge)
-* TensorFlow.js included via CDN in `index.html`
-
-## ⚡ Features
-
-* Runs entirely in the browser — no backend needed.
-* Real-time predictions with confidence visualization.
-* Simple, clean user interface.
-
----
-
-If you want, I can also **add a “Live Demo” section with GitHub Pages instructions** so people can try it online.
-
-Do you want me to add that?
